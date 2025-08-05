@@ -1,0 +1,4 @@
+module alloy_swiftFFI {
+    header "alloy_swiftFFI.h"
+    export *
+}
