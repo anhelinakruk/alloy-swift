@@ -18,11 +18,11 @@ let package = Package(
     ],
     dependencies: [ ],
     targets: [
-        .binaryTarget(name: "AlloySwiftFrameWork", path: "./AlloySwiftFrameWork.xcframework"),
+        .binaryTarget(name: "RustFramework", path: "./RustFramework.xcframework"),
         .target(
             name: "AlloySwift",
             dependencies: [
-                .target(name: "AlloySwiftFrameWork")
+                .target(name: "RustFramework")
             ]
         ),
     ]

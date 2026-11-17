@@ -13,6 +13,8 @@ use std::str::FromStr;
 
 uniffi::setup_scaffolding!();
 
+mod escrow;
+
 #[derive(Debug, thiserror::Error, uniffi::Error)]
 pub enum AlloyError {
     #[error("Mnemonic error: {message}")]

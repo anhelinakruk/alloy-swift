@@ -416,6 +416,22 @@ fileprivate struct FfiConverterUInt8: FfiConverterPrimitive {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterUInt64: FfiConverterPrimitive {
+    typealias FfiType = UInt64
+    typealias SwiftType = UInt64
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> UInt64 {
+        return try lift(readInt(&buf))
+    }
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterInt64: FfiConverterPrimitive {
     typealias FfiType = Int64
     typealias SwiftType = Int64
@@ -425,6 +441,30 @@ fileprivate struct FfiConverterInt64: FfiConverterPrimitive {
     }
 
     public static func write(_ value: Int64, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterBool : FfiConverter {
+    typealias FfiType = Int8
+    typealias SwiftType = Bool
+
+    public static func lift(_ value: Int8) throws -> Bool {
+        return value != 0
+    }
+
+    public static func lower(_ value: Bool) -> Int8 {
+        return value ? 1 : 0
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Bool {
+        return try lift(readInt(&buf))
+    }
+
+    public static func write(_ value: Bool, into buf: inout [UInt8]) {
         writeInt(&buf, lower(value))
     }
 }
@@ -486,6 +526,122 @@ fileprivate struct FfiConverterData: FfiConverterRustBuffer {
         writeInt(&buf, len)
         writeBytes(&buf, value)
     }
+}
+
+
+public struct EscrowInfo {
+    public var id: UInt64
+    public var buyer: String
+    public var seller: String?
+    public var amountWei: String
+    public var state: EscrowState
+    /**
+     * Unix seconds; `None` until the contract sets it.
+     */
+    public var shipDeadline: UInt64?
+    public var confirmDeadline: UInt64?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(id: UInt64, buyer: String, seller: String?, amountWei: String, state: EscrowState, 
+        /**
+         * Unix seconds; `None` until the contract sets it.
+         */shipDeadline: UInt64?, confirmDeadline: UInt64?) {
+        self.id = id
+        self.buyer = buyer
+        self.seller = seller
+        self.amountWei = amountWei
+        self.state = state
+        self.shipDeadline = shipDeadline
+        self.confirmDeadline = confirmDeadline
+    }
+}
+
+#if compiler(>=6)
+extension EscrowInfo: Sendable {}
+#endif
+
+
+extension EscrowInfo: Equatable, Hashable {
+    public static func ==(lhs: EscrowInfo, rhs: EscrowInfo) -> Bool {
+        if lhs.id != rhs.id {
+            return false
+        }
+        if lhs.buyer != rhs.buyer {
+            return false
+        }
+        if lhs.seller != rhs.seller {
+            return false
+        }
+        if lhs.amountWei != rhs.amountWei {
+            return false
+        }
+        if lhs.state != rhs.state {
+            return false
+        }
+        if lhs.shipDeadline != rhs.shipDeadline {
+            return false
+        }
+        if lhs.confirmDeadline != rhs.confirmDeadline {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+        hasher.combine(buyer)
+        hasher.combine(seller)
+        hasher.combine(amountWei)
+        hasher.combine(state)
+        hasher.combine(shipDeadline)
+        hasher.combine(confirmDeadline)
+    }
+}
+
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeEscrowInfo: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> EscrowInfo {
+        return
+            try EscrowInfo(
+                id: FfiConverterUInt64.read(from: &buf), 
+                buyer: FfiConverterString.read(from: &buf), 
+                seller: FfiConverterOptionString.read(from: &buf), 
+                amountWei: FfiConverterString.read(from: &buf), 
+                state: FfiConverterTypeEscrowState.read(from: &buf), 
+                shipDeadline: FfiConverterOptionUInt64.read(from: &buf), 
+                confirmDeadline: FfiConverterOptionUInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: EscrowInfo, into buf: inout [UInt8]) {
+        FfiConverterUInt64.write(value.id, into: &buf)
+        FfiConverterString.write(value.buyer, into: &buf)
+        FfiConverterOptionString.write(value.seller, into: &buf)
+        FfiConverterString.write(value.amountWei, into: &buf)
+        FfiConverterTypeEscrowState.write(value.state, into: &buf)
+        FfiConverterOptionUInt64.write(value.shipDeadline, into: &buf)
+        FfiConverterOptionUInt64.write(value.confirmDeadline, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeEscrowInfo_lift(_ buf: RustBuffer) throws -> EscrowInfo {
+    return try FfiConverterTypeEscrowInfo.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeEscrowInfo_lower(_ value: EscrowInfo) -> RustBuffer {
+    return FfiConverterTypeEscrowInfo.lower(value)
 }
 
 
@@ -590,6 +746,282 @@ extension AlloyError: Foundation.LocalizedError {
     }
 }
 
+
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+/**
+ * Every state-changing call that targets an existing escrow by id.
+ */
+
+public enum EscrowAction {
+    
+    case join
+    case cancel
+    case markShipped
+    case confirmReceipt
+    case refundExpired
+    case autoComplete
+    case raiseDispute
+}
+
+
+#if compiler(>=6)
+extension EscrowAction: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeEscrowAction: FfiConverterRustBuffer {
+    typealias SwiftType = EscrowAction
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> EscrowAction {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .join
+        
+        case 2: return .cancel
+        
+        case 3: return .markShipped
+        
+        case 4: return .confirmReceipt
+        
+        case 5: return .refundExpired
+        
+        case 6: return .autoComplete
+        
+        case 7: return .raiseDispute
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: EscrowAction, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .join:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .cancel:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .markShipped:
+            writeInt(&buf, Int32(3))
+        
+        
+        case .confirmReceipt:
+            writeInt(&buf, Int32(4))
+        
+        
+        case .refundExpired:
+            writeInt(&buf, Int32(5))
+        
+        
+        case .autoComplete:
+            writeInt(&buf, Int32(6))
+        
+        
+        case .raiseDispute:
+            writeInt(&buf, Int32(7))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeEscrowAction_lift(_ buf: RustBuffer) throws -> EscrowAction {
+    return try FfiConverterTypeEscrowAction.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeEscrowAction_lower(_ value: EscrowAction) -> RustBuffer {
+    return FfiConverterTypeEscrowAction.lower(value)
+}
+
+
+extension EscrowAction: Equatable, Hashable {}
+
+
+
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+/**
+ * Mirrors `Escrow.State` in the contract; order must match.
+ */
+
+public enum EscrowState {
+    
+    case created
+    case funded
+    case shipped
+    case completed
+    case disputed
+    case refunded
+}
+
+
+#if compiler(>=6)
+extension EscrowState: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeEscrowState: FfiConverterRustBuffer {
+    typealias SwiftType = EscrowState
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> EscrowState {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .created
+        
+        case 2: return .funded
+        
+        case 3: return .shipped
+        
+        case 4: return .completed
+        
+        case 5: return .disputed
+        
+        case 6: return .refunded
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: EscrowState, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .created:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .funded:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .shipped:
+            writeInt(&buf, Int32(3))
+        
+        
+        case .completed:
+            writeInt(&buf, Int32(4))
+        
+        
+        case .disputed:
+            writeInt(&buf, Int32(5))
+        
+        
+        case .refunded:
+            writeInt(&buf, Int32(6))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeEscrowState_lift(_ buf: RustBuffer) throws -> EscrowState {
+    return try FfiConverterTypeEscrowState.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeEscrowState_lower(_ value: EscrowState) -> RustBuffer {
+    return FfiConverterTypeEscrowState.lower(value)
+}
+
+
+extension EscrowState: Equatable, Hashable {}
+
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionUInt64: FfiConverterRustBuffer {
+    typealias SwiftType = UInt64?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterUInt64.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterUInt64.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionString: FfiConverterRustBuffer {
+    typealias SwiftType = String?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterString.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterString.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeEscrowInfo: FfiConverterRustBuffer {
+    typealias SwiftType = [EscrowInfo]
+
+    public static func write(_ value: [EscrowInfo], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeEscrowInfo.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [EscrowInfo] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [EscrowInfo]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeEscrowInfo.read(from: &buf))
+        }
+        return seq
+    }
+}
 private let UNIFFI_RUST_FUTURE_POLL_READY: Int8 = 0
 private let UNIFFI_RUST_FUTURE_POLL_MAYBE_READY: Int8 = 1
 
@@ -636,6 +1068,23 @@ fileprivate func uniffiFutureContinuationCallback(handle: UInt64, pollResult: In
         print("uniffiFutureContinuationCallback invalid handle")
     }
 }
+/**
+ * Buyer creates and funds an escrow; returns its id (the one shared in the link).
+ */
+public func createEscrow(mnemonic: String, rpcUrl: String, contract: String, amountWei: String)async throws  -> UInt64  {
+    return
+        try  await uniffiRustCallAsync(
+            rustFutureFunc: {
+                uniffi_alloy_swift_fn_func_create_escrow(FfiConverterString.lower(mnemonic),FfiConverterString.lower(rpcUrl),FfiConverterString.lower(contract),FfiConverterString.lower(amountWei)
+                )
+            },
+            pollFunc: ffi_alloy_swift_rust_future_poll_u64,
+            completeFunc: ffi_alloy_swift_rust_future_complete_u64,
+            freeFunc: ffi_alloy_swift_rust_future_free_u64,
+            liftFunc: FfiConverterUInt64.lift,
+            errorHandler: FfiConverterTypeAlloyError_lift
+        )
+}
 public func deriveAddressFromMnemonic(mnemonic: String)async throws  -> String  {
     return
         try  await uniffiRustCallAsync(
@@ -650,11 +1099,111 @@ public func deriveAddressFromMnemonic(mnemonic: String)async throws  -> String  
             errorHandler: FfiConverterTypeAlloyError_lift
         )
 }
+/**
+ * Runs one of the per-escrow actions; returns the transaction hash.
+ */
+public func escrowAction(mnemonic: String, rpcUrl: String, contract: String, action: EscrowAction, id: UInt64)async throws  -> String  {
+    return
+        try  await uniffiRustCallAsync(
+            rustFutureFunc: {
+                uniffi_alloy_swift_fn_func_escrow_action(FfiConverterString.lower(mnemonic),FfiConverterString.lower(rpcUrl),FfiConverterString.lower(contract),FfiConverterTypeEscrowAction_lower(action),FfiConverterUInt64.lower(id)
+                )
+            },
+            pollFunc: ffi_alloy_swift_rust_future_poll_rust_buffer,
+            completeFunc: ffi_alloy_swift_rust_future_complete_rust_buffer,
+            freeFunc: ffi_alloy_swift_rust_future_free_rust_buffer,
+            liftFunc: FfiConverterString.lift,
+            errorHandler: FfiConverterTypeAlloyError_lift
+        )
+}
 public func generateMnemonic(bytes: Data)async throws  -> String  {
     return
         try  await uniffiRustCallAsync(
             rustFutureFunc: {
                 uniffi_alloy_swift_fn_func_generate_mnemonic(FfiConverterData.lower(bytes)
+                )
+            },
+            pollFunc: ffi_alloy_swift_rust_future_poll_rust_buffer,
+            completeFunc: ffi_alloy_swift_rust_future_complete_rust_buffer,
+            freeFunc: ffi_alloy_swift_rust_future_free_rust_buffer,
+            liftFunc: FfiConverterString.lift,
+            errorHandler: FfiConverterTypeAlloyError_lift
+        )
+}
+/**
+ * Native ETH balance in wei.
+ */
+public func getBalance(rpcUrl: String, address: String)async throws  -> String  {
+    return
+        try  await uniffiRustCallAsync(
+            rustFutureFunc: {
+                uniffi_alloy_swift_fn_func_get_balance(FfiConverterString.lower(rpcUrl),FfiConverterString.lower(address)
+                )
+            },
+            pollFunc: ffi_alloy_swift_rust_future_poll_rust_buffer,
+            completeFunc: ffi_alloy_swift_rust_future_complete_rust_buffer,
+            freeFunc: ffi_alloy_swift_rust_future_free_rust_buffer,
+            liftFunc: FfiConverterString.lift,
+            errorHandler: FfiConverterTypeAlloyError_lift
+        )
+}
+public func getEscrow(rpcUrl: String, contract: String, id: UInt64)async throws  -> EscrowInfo  {
+    return
+        try  await uniffiRustCallAsync(
+            rustFutureFunc: {
+                uniffi_alloy_swift_fn_func_get_escrow(FfiConverterString.lower(rpcUrl),FfiConverterString.lower(contract),FfiConverterUInt64.lower(id)
+                )
+            },
+            pollFunc: ffi_alloy_swift_rust_future_poll_rust_buffer,
+            completeFunc: ffi_alloy_swift_rust_future_complete_rust_buffer,
+            freeFunc: ffi_alloy_swift_rust_future_free_rust_buffer,
+            liftFunc: FfiConverterTypeEscrowInfo_lift,
+            errorHandler: FfiConverterTypeAlloyError_lift
+        )
+}
+public func isValidAddress(address: String) -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+    uniffi_alloy_swift_fn_func_is_valid_address(
+        FfiConverterString.lower(address),$0
+    )
+})
+}
+/**
+ * Every escrow where `address` is the buyer or the seller, newest first.
+ */
+public func listEscrowsFor(rpcUrl: String, contract: String, address: String)async throws  -> [EscrowInfo]  {
+    return
+        try  await uniffiRustCallAsync(
+            rustFutureFunc: {
+                uniffi_alloy_swift_fn_func_list_escrows_for(FfiConverterString.lower(rpcUrl),FfiConverterString.lower(contract),FfiConverterString.lower(address)
+                )
+            },
+            pollFunc: ffi_alloy_swift_rust_future_poll_rust_buffer,
+            completeFunc: ffi_alloy_swift_rust_future_complete_rust_buffer,
+            freeFunc: ffi_alloy_swift_rust_future_free_rust_buffer,
+            liftFunc: FfiConverterSequenceTypeEscrowInfo.lift,
+            errorHandler: FfiConverterTypeAlloyError_lift
+        )
+}
+public func pendingWithdrawal(rpcUrl: String, contract: String, address: String)async throws  -> String  {
+    return
+        try  await uniffiRustCallAsync(
+            rustFutureFunc: {
+                uniffi_alloy_swift_fn_func_pending_withdrawal(FfiConverterString.lower(rpcUrl),FfiConverterString.lower(contract),FfiConverterString.lower(address)
+                )
+            },
+            pollFunc: ffi_alloy_swift_rust_future_poll_rust_buffer,
+            completeFunc: ffi_alloy_swift_rust_future_complete_rust_buffer,
+            freeFunc: ffi_alloy_swift_rust_future_free_rust_buffer,
+            liftFunc: FfiConverterString.lift,
+            errorHandler: FfiConverterTypeAlloyError_lift
+        )
+}
+public func sendEthTransaction(mnemonic: String, to: String, amountEth: String, networkRpcUrl: String, chainId: UInt64)async throws  -> String  {
+    return
+        try  await uniffiRustCallAsync(
+            rustFutureFunc: {
+                uniffi_alloy_swift_fn_func_send_eth_transaction(FfiConverterString.lower(mnemonic),FfiConverterString.lower(to),FfiConverterString.lower(amountEth),FfiConverterString.lower(networkRpcUrl),FfiConverterUInt64.lower(chainId)
                 )
             },
             pollFunc: ffi_alloy_swift_rust_future_poll_rust_buffer,
@@ -692,6 +1241,40 @@ public func signMessage(mnemonic: String, message: String)async throws  -> Strin
             errorHandler: FfiConverterTypeAlloyError_lift
         )
 }
+/**
+ * Plain ETH transfer with an exact wei amount; the chain id comes from the RPC.
+ */
+public func transferEth(mnemonic: String, rpcUrl: String, to: String, amountWei: String)async throws  -> String  {
+    return
+        try  await uniffiRustCallAsync(
+            rustFutureFunc: {
+                uniffi_alloy_swift_fn_func_transfer_eth(FfiConverterString.lower(mnemonic),FfiConverterString.lower(rpcUrl),FfiConverterString.lower(to),FfiConverterString.lower(amountWei)
+                )
+            },
+            pollFunc: ffi_alloy_swift_rust_future_poll_rust_buffer,
+            completeFunc: ffi_alloy_swift_rust_future_complete_rust_buffer,
+            freeFunc: ffi_alloy_swift_rust_future_free_rust_buffer,
+            liftFunc: FfiConverterString.lift,
+            errorHandler: FfiConverterTypeAlloyError_lift
+        )
+}
+/**
+ * Pulls the caller's whole pending balance out of the contract.
+ */
+public func withdraw(mnemonic: String, rpcUrl: String, contract: String)async throws  -> String  {
+    return
+        try  await uniffiRustCallAsync(
+            rustFutureFunc: {
+                uniffi_alloy_swift_fn_func_withdraw(FfiConverterString.lower(mnemonic),FfiConverterString.lower(rpcUrl),FfiConverterString.lower(contract)
+                )
+            },
+            pollFunc: ffi_alloy_swift_rust_future_poll_rust_buffer,
+            completeFunc: ffi_alloy_swift_rust_future_complete_rust_buffer,
+            freeFunc: ffi_alloy_swift_rust_future_free_rust_buffer,
+            liftFunc: FfiConverterString.lift,
+            errorHandler: FfiConverterTypeAlloyError_lift
+        )
+}
 
 private enum InitializationResult {
     case ok
@@ -708,16 +1291,46 @@ private let initializationResult: InitializationResult = {
     if bindings_contract_version != scaffolding_contract_version {
         return InitializationResult.contractVersionMismatch
     }
+    if (uniffi_alloy_swift_checksum_func_create_escrow() != 32437) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_alloy_swift_checksum_func_derive_address_from_mnemonic() != 12784) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_alloy_swift_checksum_func_escrow_action() != 52840) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_alloy_swift_checksum_func_generate_mnemonic() != 59518) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_alloy_swift_checksum_func_get_balance() != 63558) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_alloy_swift_checksum_func_get_escrow() != 23611) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_alloy_swift_checksum_func_is_valid_address() != 45749) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_alloy_swift_checksum_func_list_escrows_for() != 60098) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_alloy_swift_checksum_func_pending_withdrawal() != 37471) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_alloy_swift_checksum_func_send_eth_transaction() != 8049) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_alloy_swift_checksum_func_send_transaction() != 12971) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_alloy_swift_checksum_func_sign_message() != 18055) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_alloy_swift_checksum_func_transfer_eth() != 32970) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_alloy_swift_checksum_func_withdraw() != 59936) {
         return InitializationResult.apiChecksumMismatch
     }
 

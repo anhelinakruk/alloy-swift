@@ -251,14 +251,54 @@ typedef void (*UniffiForeignFutureCompleteVoid)(uint64_t, UniffiForeignFutureStr
     );
 
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_FN_FUNC_CREATE_ESCROW
+#define UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_FN_FUNC_CREATE_ESCROW
+uint64_t uniffi_alloy_swift_fn_func_create_escrow(RustBuffer mnemonic, RustBuffer rpc_url, RustBuffer contract, RustBuffer amount_wei
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_FN_FUNC_DERIVE_ADDRESS_FROM_MNEMONIC
 #define UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_FN_FUNC_DERIVE_ADDRESS_FROM_MNEMONIC
 uint64_t uniffi_alloy_swift_fn_func_derive_address_from_mnemonic(RustBuffer mnemonic
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_FN_FUNC_ESCROW_ACTION
+#define UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_FN_FUNC_ESCROW_ACTION
+uint64_t uniffi_alloy_swift_fn_func_escrow_action(RustBuffer mnemonic, RustBuffer rpc_url, RustBuffer contract, RustBuffer action, uint64_t id
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_FN_FUNC_GENERATE_MNEMONIC
 #define UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_FN_FUNC_GENERATE_MNEMONIC
 uint64_t uniffi_alloy_swift_fn_func_generate_mnemonic(RustBuffer bytes
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_FN_FUNC_GET_BALANCE
+#define UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_FN_FUNC_GET_BALANCE
+uint64_t uniffi_alloy_swift_fn_func_get_balance(RustBuffer rpc_url, RustBuffer address
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_FN_FUNC_GET_ESCROW
+#define UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_FN_FUNC_GET_ESCROW
+uint64_t uniffi_alloy_swift_fn_func_get_escrow(RustBuffer rpc_url, RustBuffer contract, uint64_t id
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_FN_FUNC_IS_VALID_ADDRESS
+#define UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_FN_FUNC_IS_VALID_ADDRESS
+int8_t uniffi_alloy_swift_fn_func_is_valid_address(RustBuffer address, RustCallStatus *_Nonnull out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_FN_FUNC_LIST_ESCROWS_FOR
+#define UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_FN_FUNC_LIST_ESCROWS_FOR
+uint64_t uniffi_alloy_swift_fn_func_list_escrows_for(RustBuffer rpc_url, RustBuffer contract, RustBuffer address
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_FN_FUNC_PENDING_WITHDRAWAL
+#define UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_FN_FUNC_PENDING_WITHDRAWAL
+uint64_t uniffi_alloy_swift_fn_func_pending_withdrawal(RustBuffer rpc_url, RustBuffer contract, RustBuffer address
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_FN_FUNC_SEND_ETH_TRANSACTION
+#define UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_FN_FUNC_SEND_ETH_TRANSACTION
+uint64_t uniffi_alloy_swift_fn_func_send_eth_transaction(RustBuffer mnemonic, RustBuffer to, RustBuffer amount_eth, RustBuffer network_rpc_url, uint64_t chain_id
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_FN_FUNC_SEND_TRANSACTION
@@ -269,6 +309,16 @@ uint64_t uniffi_alloy_swift_fn_func_send_transaction(RustBuffer mnemonic, RustBu
 #ifndef UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_FN_FUNC_SIGN_MESSAGE
 #define UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_FN_FUNC_SIGN_MESSAGE
 uint64_t uniffi_alloy_swift_fn_func_sign_message(RustBuffer mnemonic, RustBuffer message
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_FN_FUNC_TRANSFER_ETH
+#define UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_FN_FUNC_TRANSFER_ETH
+uint64_t uniffi_alloy_swift_fn_func_transfer_eth(RustBuffer mnemonic, RustBuffer rpc_url, RustBuffer to, RustBuffer amount_wei
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_FN_FUNC_WITHDRAW
+#define UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_FN_FUNC_WITHDRAW
+uint64_t uniffi_alloy_swift_fn_func_withdraw(RustBuffer mnemonic, RustBuffer rpc_url, RustBuffer contract
 );
 #endif
 #ifndef UNIFFI_FFIDEF_FFI_ALLOY_SWIFT_RUSTBUFFER_ALLOC
@@ -551,15 +601,63 @@ void ffi_alloy_swift_rust_future_free_void(uint64_t handle
 void ffi_alloy_swift_rust_future_complete_void(uint64_t handle, RustCallStatus *_Nonnull out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_CHECKSUM_FUNC_CREATE_ESCROW
+#define UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_CHECKSUM_FUNC_CREATE_ESCROW
+uint16_t uniffi_alloy_swift_checksum_func_create_escrow(void
+    
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_CHECKSUM_FUNC_DERIVE_ADDRESS_FROM_MNEMONIC
 #define UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_CHECKSUM_FUNC_DERIVE_ADDRESS_FROM_MNEMONIC
 uint16_t uniffi_alloy_swift_checksum_func_derive_address_from_mnemonic(void
     
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_CHECKSUM_FUNC_ESCROW_ACTION
+#define UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_CHECKSUM_FUNC_ESCROW_ACTION
+uint16_t uniffi_alloy_swift_checksum_func_escrow_action(void
+    
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_CHECKSUM_FUNC_GENERATE_MNEMONIC
 #define UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_CHECKSUM_FUNC_GENERATE_MNEMONIC
 uint16_t uniffi_alloy_swift_checksum_func_generate_mnemonic(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_CHECKSUM_FUNC_GET_BALANCE
+#define UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_CHECKSUM_FUNC_GET_BALANCE
+uint16_t uniffi_alloy_swift_checksum_func_get_balance(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_CHECKSUM_FUNC_GET_ESCROW
+#define UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_CHECKSUM_FUNC_GET_ESCROW
+uint16_t uniffi_alloy_swift_checksum_func_get_escrow(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_CHECKSUM_FUNC_IS_VALID_ADDRESS
+#define UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_CHECKSUM_FUNC_IS_VALID_ADDRESS
+uint16_t uniffi_alloy_swift_checksum_func_is_valid_address(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_CHECKSUM_FUNC_LIST_ESCROWS_FOR
+#define UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_CHECKSUM_FUNC_LIST_ESCROWS_FOR
+uint16_t uniffi_alloy_swift_checksum_func_list_escrows_for(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_CHECKSUM_FUNC_PENDING_WITHDRAWAL
+#define UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_CHECKSUM_FUNC_PENDING_WITHDRAWAL
+uint16_t uniffi_alloy_swift_checksum_func_pending_withdrawal(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_CHECKSUM_FUNC_SEND_ETH_TRANSACTION
+#define UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_CHECKSUM_FUNC_SEND_ETH_TRANSACTION
+uint16_t uniffi_alloy_swift_checksum_func_send_eth_transaction(void
     
 );
 #endif
@@ -572,6 +670,18 @@ uint16_t uniffi_alloy_swift_checksum_func_send_transaction(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_CHECKSUM_FUNC_SIGN_MESSAGE
 #define UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_CHECKSUM_FUNC_SIGN_MESSAGE
 uint16_t uniffi_alloy_swift_checksum_func_sign_message(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_CHECKSUM_FUNC_TRANSFER_ETH
+#define UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_CHECKSUM_FUNC_TRANSFER_ETH
+uint16_t uniffi_alloy_swift_checksum_func_transfer_eth(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_CHECKSUM_FUNC_WITHDRAW
+#define UNIFFI_FFIDEF_UNIFFI_ALLOY_SWIFT_CHECKSUM_FUNC_WITHDRAW
+uint16_t uniffi_alloy_swift_checksum_func_withdraw(void
     
 );
 #endif
