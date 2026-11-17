@@ -170,6 +170,71 @@ pub async fn send_transaction(
     })
 }
 
+#[uniffi::export]
+pub async fn send_eth_transaction(
+    mnemonic: &str,
+    to: &str,
+    amount_eth: &str,
+    network_rpc_url: &str,
+    chain_id: u64,
+) -> Result<String, AlloyError> {
+    let rt = tokio::runtime::Runtime::new().map_err(|e| AlloyError::ProviderError {
+        message: e.to_string(),
+    })?;
+
+    rt.block_on(async {
+        let mnemonic_signer = MnemonicBuilder::<English>::default()
+            .phrase(mnemonic)
+            .build()
+            .map_err(|e| AlloyError::MnemonicError {
+                message: e.to_string(),
+            })?;
+
+        let provider = ProviderBuilder::new()
+            .wallet(mnemonic_signer)
+            .connect_http(network_rpc_url.parse::<Url>()
+                .map_err(|e| AlloyError::UrlError { message: e.to_string() })?
+            );
+
+        let to_address = Address::from_str(to)
+            .map_err(|e| AlloyError::AddressError { message: e.to_string() })?;
+
+        let amount_wei = {
+            let amount_f64: f64 = amount_eth.parse()
+                .map_err(|e| AlloyError::ProviderError {
+                    message: format!("Invalid amount format: {}", e)
+                })?;
+
+            let wei_f64 = amount_f64 * 1_000_000_000_000_000_000.0;
+            U256::from(wei_f64 as u128)
+        };
+
+        let tx = TransactionRequest::default()
+            .with_to(to_address)
+            .with_value(amount_wei)
+            .with_chain_id(chain_id);
+
+        let gas_estimate = provider.estimate_gas(tx.clone()).await
+            .map_err(|e| AlloyError::ProviderError { message: e.to_string() })?;
+
+        let tx_hash = provider
+            .send_transaction(tx.with_gas_limit(gas_estimate))
+            .await
+            .map_err(|e| AlloyError::ProviderError { message: e.to_string() })?
+            .watch()
+            .await
+            .map_err(|e| AlloyError::ProviderError { message: e.to_string() })?;
+
+        Ok(tx_hash.to_string())
+    })
+}
+
+#[uniffi::export]
+pub fn is_valid_address(address: &str) -> bool {
+    Address::from_str(address).is_ok()
+}
+
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -182,10 +247,7 @@ mod tests {
         let mnemonic = result.unwrap();
         let words: Vec<&str> = mnemonic.split_whitespace().collect();
 
-        // Should have exactly 12 words
         assert_eq!(words.len(), 12);
-
-        // Each word should be valid (non-empty)
         for word in words {
             assert!(!word.is_empty());
         }
@@ -193,14 +255,12 @@ mod tests {
 
     #[tokio::test]
     async fn test_derive_address_from_mnemonic() {
-        // Test with a known valid mnemonic
         let test_mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
 
         let result = derive_address_from_mnemonic(test_mnemonic).await;
         assert!(result.is_ok());
 
         let address = result.unwrap();
-        // Address should start with 0x and be 42 characters long
         assert!(address.starts_with("0x"));
         assert_eq!(address.len(), 42);
     }
