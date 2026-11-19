@@ -243,15 +243,14 @@ mod tests {
 
     #[tokio::test]
     async fn test_generate_mnemonic() {
-        let result = generate_mnemonic(&[0; 32]).await;
-        assert!(result.is_ok());
+        // BIP-39: 128 bits of entropy -> 12 words (what the escrow app uses),
+        // 256 bits -> 24 words.
+        for (bytes, expected_words) in [(16, 12), (32, 24)] {
+            let mnemonic = generate_mnemonic(&vec![0; bytes]).await.unwrap();
+            let words: Vec<&str> = mnemonic.split_whitespace().collect();
 
-        let mnemonic = result.unwrap();
-        let words: Vec<&str> = mnemonic.split_whitespace().collect();
-
-        assert_eq!(words.len(), 12);
-        for word in words {
-            assert!(!word.is_empty());
+            assert_eq!(words.len(), expected_words);
+            assert!(words.iter().all(|word| !word.is_empty()));
         }
     }
 
